@@ -1,6 +1,7 @@
 import { Button, Frog } from 'frog'
 import { devtools } from 'frog/dev'
 import { pinata } from 'frog/hubs'
+import { neynar } from 'frog/middlewares'
 import { serveStatic } from 'frog/serve-static'
 import { handle } from 'frog/vercel'
 import { baseSepolia } from 'viem/chains'
@@ -15,15 +16,44 @@ export const app = new Frog({
   basePath: '/api',
   // Supply a Hub API URL to enable frame verification.
   hub: pinata(),
-  // hub: neynar({ apiKey: 'NEYNAR_FROG_FM' }),
-})
+}).use(
+  neynar({
+    apiKey: 'NEYNAR_FROG_FM',
+    features: ['interactor', 'cast'],
+  })
+)
 
 app.frame('/', (c) => {
   return c.res({
     action: '/finish',
-    image: 'http://localhost:5173/og.png',
+    image: 'https://1e76-103-97-2-181.ngrok-free.app/og.png',
     imageAspectRatio: '1:1',
-    intents: [<Button.Transaction target="/mint">Mint</Button.Transaction>],
+    intents: [
+      <Button.Transaction target="/mint">Mint</Button.Transaction>,
+      <Button action="/neynar">Neynar</Button>,
+    ],
+  })
+})
+
+app.frame('/neynar', (c) => {
+  const { displayName, followerCount } = c.var.interactor || {}
+  console.log('interactor: ', c.var.interactor)
+  return c.res({
+    image: (
+      <div
+        style={{
+          alignItems: 'center',
+          color: 'white',
+          display: 'flex',
+          justifyContent: 'center',
+          fontSize: 48,
+          height: '100%',
+          width: '100%',
+        }}
+      >
+        Greetings {displayName}, you have {followerCount} followers.
+      </div>
+    ),
   })
 })
 
