@@ -27,7 +27,7 @@ export const app = new Frog({
 app.frame('/', (c) => {
   return c.res({
     action: '/finish',
-    image: 'https://1e76-103-97-2-181.ngrok-free.app/og.png',
+    image: 'https://0bfe-98-98-195-35.ngrok-free.app/og.png',
     imageAspectRatio: '1:1',
     intents: [
       <Button.Transaction target="/mint">Mint</Button.Transaction>,
@@ -37,7 +37,7 @@ app.frame('/', (c) => {
 })
 
 app.frame('/neynar', (c) => {
-  const { displayName, followerCount } = c.var.interactor || {}
+  const { displayName, followerCount, pfpUrl } = c.var.interactor || {}
   console.log('interactor: ', c.var.interactor)
   return c.res({
     image: (
@@ -46,13 +46,22 @@ app.frame('/neynar', (c) => {
           alignItems: 'center',
           color: 'white',
           display: 'flex',
+          flexDirection: 'column',
           justifyContent: 'center',
+          gap: 28,
           fontSize: 48,
           height: '100%',
           width: '100%',
         }}
       >
         Greetings {displayName}, you have {followerCount} followers.
+        <img
+          style={{
+            width: 200,
+            height: 200,
+          }}
+          src={pfpUrl}
+        />
       </div>
     ),
   })
