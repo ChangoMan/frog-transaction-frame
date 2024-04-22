@@ -1,9 +1,9 @@
-import { Button, Frog } from 'frog'
+import { Button, Frog, TextInput } from 'frog'
 import { devtools } from 'frog/dev'
-import { pinata } from 'frog/hubs'
 import { serveStatic } from 'frog/serve-static'
 import { handle } from 'frog/vercel'
 import type { Address } from 'viem'
+import { isAddress } from 'viem'
 import { baseSepolia } from 'viem/chains'
 import { abi } from '../abi.js'
 
@@ -12,19 +12,49 @@ import { abi } from '../abi.js'
 //   runtime: 'edge',
 // }
 
-export const app = new Frog({
+type State = {
+  address: string
+}
+
+export const app = new Frog<{ State: State }>({
   basePath: '/api',
+  initialState: {
+    address: '',
+  },
   // Supply a Hub API URL to enable frame verification.
-  hub: pinata(),
+  // hub: pinata(),
   // hub: neynar({ apiKey: 'NEYNAR_FROG_FM' }),
 })
 
 app.frame('/', (c) => {
   return c.res({
-    action: '/finish',
+    action: '/check-address',
     image: (
       <div style={{ color: 'white', display: 'flex', fontSize: 60 }}>
         Perform a transaction
+      </div>
+    ),
+    intents: [
+      <TextInput placeholder="0xAddressToInfect" />,
+      <Button>INFECT</Button>,
+    ],
+  })
+})
+
+app.frame('/check-address', (c) => {
+  const { inputText, deriveState } = c
+
+  deriveState((prevState) => {
+    if (isAddress(inputText || '')) {
+      prevState.address = inputText || ''
+    }
+  })
+
+  return c.res({
+    action: '/finish',
+    image: (
+      <div style={{ color: 'white', display: 'flex', fontSize: 60 }}>
+        {inputText}
       </div>
     ),
     intents: [<Button.Transaction target="/mint">Mint</Button.Transaction>],
@@ -32,11 +62,27 @@ app.frame('/', (c) => {
 })
 
 app.frame('/finish', (c) => {
-  const { transactionId } = c
+  const { transactionId, previousState } = c
+
   return c.res({
     image: (
-      <div style={{ color: 'white', display: 'flex', fontSize: 60 }}>
-        Transaction ID: {transactionId}
+      <div
+        style={{
+          backgroundColor: '#0A0A0B',
+          height: '100%',
+          width: '100%',
+          color: 'white',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 24,
+          justifyContent: 'center',
+          alignItems: 'center',
+          fontSize: 50,
+          paddingTop: 24,
+        }}
+      >
+        <div style={{ display: 'flex' }}> Transaction ID: {transactionId}</div>
+        <div style={{ display: 'flex' }}>{previousState.address}</div>
       </div>
     ),
   })
@@ -44,8 +90,6 @@ app.frame('/finish', (c) => {
 
 app.transaction('/mint', (c) => {
   const address = c.address as Address
-
-  console.log('address', address)
   return c.contract({
     abi,
     functionName: 'claim',
